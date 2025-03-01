@@ -163,8 +163,6 @@ void run_symbolic_regression(const std::string &dataset_file) {
 
   // Load dataset
   std::cout << "Loading dataset..." << std::endl;
-  ctimer_t loading_timer;
-  ctimer_start(&loading_timer);
 
   auto dataset = utils::load_dataset(dataset_file);
   auto X = dataset.first;
@@ -185,10 +183,6 @@ void run_symbolic_regression(const std::string &dataset_file) {
   // Flatten data for genetic library (column-major)
   std::vector<float> X_train_flat = utils::flatten_column_major(X_train);
   std::vector<float> X_test_flat = utils::flatten_column_major(X_test);
-
-  ctimer_stop(&loading_timer);
-  ctimer_measure(&loading_timer);
-  ctimer_print(loading_timer, "Dataset loading");
 
   // Create weights (all 1.0)
   std::vector<float> sample_weights(y_train.size(), 1.0f);
@@ -229,12 +223,9 @@ void run_symbolic_regression(const std::string &dataset_file) {
 
   // Running the symbolic regression
   std::cout << "Training symbolic regressor with " << params.population_size
-            << " population size and " << params.generations << "generations"
+            << " population size and " << params.generations << " generations"
             << std::endl;
 
-  // Measure training time
-  ctimer_t training_timer;
-  ctimer_start(&training_timer);
 
   // Create history vector to store programs
   genetic::program_t final_programs;
@@ -247,21 +238,15 @@ void run_symbolic_regression(const std::string &dataset_file) {
                   X_train[0].size(), // Number of columns
                   params, final_programs, history);
 
-  ctimer_stop(&training_timer);
-  ctimer_measure(&training_timer);
-  ctimer_print(training_timer, "Training");
-  double training_time = timespec_sec(training_timer.elapsed);
   // Debug printing
   // for (int i = 0; i < params.population_size; ++i) {
   //   std::cout << "Gen 0: " << i << "=" << genetic::stringify(history[0][i])
   //             << std::endl;
   // }
 
-  // Predict on test set
-  std::cout << "Making predictions on top 2 programs.." << std::endl;
-  ctimer_t prediction_timer;
-  ctimer_start(&prediction_timer);
+  // Predict on top 2 candidates
   insertionSortPrograms(final_programs, params.population_size);
+
   std::vector<float> y_pred1(X_test.size());
   genetic::symRegPredict(X_test_flat.data(), X_test.size(), &final_programs[0],
                          y_pred1.data());
@@ -273,21 +258,11 @@ void run_symbolic_regression(const std::string &dataset_file) {
   // Calculate MSE on test set
   float mse = utils::mean_squared_error(y_test, y_pred1);
   float mse2 = utils::mean_squared_error(y_test, y_pred2);
-  ctimer_stop(&prediction_timer);
-  ctimer_measure(&prediction_timer);
-  ctimer_print(prediction_timer, "Prediction");
-  double prediction_time = timespec_sec(prediction_timer.elapsed);
-
-  // Print results
-  std::cout << "\nPerformance Results:" << std::endl;
-  std::cout << "Training time: " << training_time << " seconds" << std::endl;
-  std::cout << "Prediction time: " << prediction_time << " seconds"
-            << std::endl;
 
   // Extract the best programs and print some stats
   if (history.back().size() > 0) {
     genetic::program_t best_program1 = &final_programs[0];
-    std::cout << "Best program details:" << std::endl;
+    std::cout << "Best program 1 details:" << std::endl;
     std::cout << "- Length: " << best_program1->len << " nodes" << std::endl;
     std::cout << "- Depth: " << best_program1->depth << std::endl;
     std::cout << "- Raw fitness: " << best_program1->raw_fitness_ << std::endl;
@@ -298,7 +273,7 @@ void run_symbolic_regression(const std::string &dataset_file) {
     std::cout << "- Program: " << program_str << std::endl;
 
     genetic::program_t best_program2 = &final_programs[1];
-    std::cout << "Best program details:" << std::endl;
+    std::cout << "Best program 2 details:" << std::endl;
     std::cout << "- Length: " << best_program2->len << " nodes" << std::endl;
     std::cout << "- Depth: " << best_program2->depth << std::endl;
     std::cout << "- Raw fitness: " << best_program2->raw_fitness_ << std::endl;
@@ -326,8 +301,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
 
   // Load dataset
   std::cout << "Loading dataset..." << std::endl;
-  ctimer_t loading_timer;
-  ctimer_start(&loading_timer);
 
   auto dataset = utils::load_dataset(dataset_file);
   auto X = dataset.first;
@@ -348,10 +321,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
   // Flatten data for genetic library (column-major)
   std::vector<float> X_train_flat = utils::flatten_column_major(X_train);
   std::vector<float> X_test_flat = utils::flatten_column_major(X_test);
-
-  ctimer_stop(&loading_timer);
-  ctimer_measure(&loading_timer);
-  ctimer_print(loading_timer, "Dataset loading");
 
   // Create weights (all 1.0)
   std::vector<float> sample_weights(y_train.size(), 1.0f);
@@ -385,7 +354,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
   params.transformer =
       genetic::transformer_t::sigmoid; // Use sigmoid for binary classification
   params.parsimony_coefficient = 0.01f;
-
   params.p_crossover = 0.80f; // High crossover probability
   params.p_subtree_mutation = 0.05f;
   params.p_hoist_mutation = 0.01f;
@@ -397,10 +365,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
   std::cout << "Training symbolic classifier with " << params.population_size
             << " population size and " << params.generations << " generations "
             << std::endl;
-
-  // Measure training time
-  ctimer_t training_timer;
-  ctimer_start(&training_timer);
 
   // Create history vector to store programs
   genetic::program_t final_programs;
@@ -414,11 +378,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
                   X_train[0].size(), // Number of columns
                   params, final_programs, history);
 
-  ctimer_stop(&training_timer);
-  ctimer_measure(&training_timer);
-  ctimer_print(training_timer, "Training");
-
-  double training_time = timespec_sec(training_timer.elapsed);
   // // print and check programs from hsitory
   // for (int i = 0; i < params.population_size; ++i) {
   //   std::cout << "Gen " << 16 << " : "
@@ -427,10 +386,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
   // }
 
   // Predict classes for best 2 programs acc to training
-  std::cout << "Making class predictions..." << std::endl;
-  ctimer_t pred_timer;
-  ctimer_start(&pred_timer);
-
   insertionSortPrograms(final_programs, params.population_size);
   std::vector<float> y_pred1(X_test.size());
   genetic::symClfPredict(X_test_flat.data(), X_test.size(), params,
@@ -442,16 +397,6 @@ void run_symbolic_classification(const std::string &dataset_file) {
 
   float acc = utils::accuracy(y_test, y_pred1);
   float acc2 = utils::accuracy(y_test, y_pred2);
-  ctimer_stop(&pred_timer);
-  ctimer_measure(&pred_timer);
-  ctimer_print(pred_timer, "Class predictions");
-  double pred_time = timespec_sec(pred_timer.elapsed);
-
-  // // Print results
-  std::cout << "\nPerformance Results:" << std::endl;
-  std::cout << "Training time: " << training_time << " seconds" << std::endl;
-  std::cout << "Class prediction time: " << pred_time << " seconds"
-            << std::endl;
 
   // Extract the best programs and print some stats
   if (history.back().size() > 0) {
