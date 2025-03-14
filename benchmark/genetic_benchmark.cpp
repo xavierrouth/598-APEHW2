@@ -142,6 +142,14 @@ float accuracy(const std::vector<float> &y_true,
 using namespace genetic;
 
 void insertionSortPrograms(genetic::program *programs, int size) {
+  // set any nan values to +inf
+  for (int i = 0; i < size; ++i) {
+    if (std::isnan(programs[i].raw_fitness_)) {
+      programs[i].raw_fitness_ = std::numeric_limits<float>::max();
+    }
+  }
+
+  // do insertion sort
   for (int i = 1; i < size; i++) {
     genetic::program key(programs[i]);
     int j = i - 1;
@@ -225,7 +233,6 @@ void run_symbolic_regression(const std::string &dataset_file) {
   std::cout << "Training symbolic regressor with " << params.population_size
             << " population size and " << params.generations << " generations"
             << std::endl;
-
 
   // Create history vector to store programs
   genetic::program_t final_programs;
