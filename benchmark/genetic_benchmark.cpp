@@ -208,16 +208,16 @@ void run_symbolic_regression(const std::string &dataset_file) {
   // Function set
   {
     using namespace genetic;
-    params.function_set = {node::type::add, node::type::sub,  node::type::mul,
-                           node::type::abs, node::type::sin,  node::type::cos,
-                           node::type::exp, node::type::fdim, node::type::log};
+    params.function_set = {node::type::add,  node::type::sub, node::type::mul,
+                           node::type::abs,  node::type::sin, node::type::cos,
+                           node::type::fdim, node::type::log};
     // Arity set
-    params.arity_set = {{1,
-                         {node::type::abs, node::type::sin, node::type::cos,
-                          node::type::exp, node::type::exp, node::type::log}},
-                        {2,
-                         {node::type::add, node::type::sub, node::type::mul,
-                          node::type::fdim}}};
+    params.arity_set = {
+        {1,
+         {node::type::abs, node::type::sin, node::type::cos, node::type::log}},
+        {2,
+         {node::type::add, node::type::sub, node::type::mul,
+          node::type::fdim}}};
   }
 
   params.metric = genetic::metric_t::mse; // Use MSE as the fitness metric
