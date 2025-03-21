@@ -21,7 +21,9 @@ namespace genetic {
 template <int MaxSize = MAX_STACK_SIZE>
 void execute_kernel(const program_t d_progs, const float *data, float *y_pred,
                     const uint64_t n_rows, const uint64_t n_progs) {
+  #pragma omp parallel for schedule (dynamic)
   for (uint64_t pid = 0; pid < n_progs; ++pid) {
+    // #pragma omp parallel for schedule (dynamic)
     for (uint64_t row_id = 0; row_id < n_rows; ++row_id) {
 
       stack<float, MaxSize> eval_stack;
@@ -54,13 +56,13 @@ void execute_kernel(const program_t d_progs, const float *data, float *y_pred,
 
 program::program()
     : len(0), depth(0), raw_fitness_(0.0f), metric(metric_t::mse),
-      mut_type(mutation_t::none), nodes(nullptr) {}
+      nodes(nullptr) {}
 
 program::~program() { delete[] nodes; }
 
 program::program(const program &src)
     : len(src.len), depth(src.depth), raw_fitness_(src.raw_fitness_),
-      metric(src.metric), mut_type(src.mut_type) {
+      metric(src.metric) {
   nodes = new node[len];
   std::copy(src.nodes, src.nodes + src.len, nodes);
 }
@@ -70,7 +72,6 @@ program &program::operator=(const program &src) {
   depth = src.depth;
   raw_fitness_ = src.raw_fitness_;
   metric = src.metric;
-  mut_type = src.mut_type;
 
   // Copy nodes
   delete[] nodes;
@@ -156,6 +157,7 @@ void set_batched_fitness(int n_progs, std::vector<program> &h_progs,
 
   // Update scores on host and device
   // TODO: Find a way to reduce the number of implicit memory transfers
+  #pragma omp parallel for
   for (auto i = 0; i < n_progs; ++i) {
     h_progs[i].raw_fitness_ = score[i];
   }

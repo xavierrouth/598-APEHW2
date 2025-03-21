@@ -58,8 +58,6 @@ struct program {
   float raw_fitness_;
   /** fitness metric used for current AST*/
   metric_t metric;
-  /** mutation type responsible for production */
-  mutation_t mut_type;
 }; // struct program
 
 /** program_t is a shorthand for device programs */

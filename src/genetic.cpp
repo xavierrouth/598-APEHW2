@@ -99,6 +99,7 @@ void cpp_evolve(const std::vector<program> &h_oldprogs,
   uniform_real_distribution_custom<float> dist_U(0.0f, 1.0f);
 
   // Build, Mutate and Run Tournaments
+  std::vector<mutation_t> mutation_types(n_progs);
 
   if (generation == 1) {
     // Build random programs for the first generation
@@ -119,16 +120,16 @@ void cpp_evolve(const std::vector<program> &h_oldprogs,
       float prob = dist_U(h_gen);
 
       if (prob < mut_probs[0]) {
-        h_nextprogs[i].mut_type = mutation_t::crossover;
+        mutation_types[i] = mutation_t::crossover;
         n_tours++;
       } else if (prob < mut_probs[1]) {
-        h_nextprogs[i].mut_type = mutation_t::subtree;
+        mutation_types[i] = mutation_t::subtree;
       } else if (prob < mut_probs[2]) {
-        h_nextprogs[i].mut_type = mutation_t::hoist;
+        mutation_types[i]  = mutation_t::hoist;
       } else if (prob < mut_probs[3]) {
-        h_nextprogs[i].mut_type = mutation_t::point;
+        mutation_types[i]  = mutation_t::point;
       } else {
-        h_nextprogs[i].mut_type = mutation_t::reproduce;
+        mutation_types[i]  = mutation_t::reproduce;
       }
     }
 
@@ -149,25 +150,27 @@ void cpp_evolve(const std::vector<program> &h_oldprogs,
     // Perform host mutations
 
     auto donor_pos = n_progs;
-    for (auto pos = 0; pos < n_progs; ++pos) {
+    
+    #pragma omp parallel for
+    for (int pos = 0; pos < n_progs; pos++) {
       auto parent_index = d_win_indices[pos];
 
-      if (h_nextprogs[pos].mut_type == mutation_t::crossover) {
+      if (mutation_types[pos] == mutation_t::crossover) {
         // Get secondary index
         auto donor_index = d_win_indices[donor_pos];
-        donor_pos++;
+        donor_pos++; // This needs to be atomic. 
         crossover(h_oldprogs[parent_index], h_oldprogs[donor_index],
                   h_nextprogs[pos], params, h_gen);
-      } else if (h_nextprogs[pos].mut_type == mutation_t::subtree) {
+      } else if (mutation_types[pos] == mutation_t::subtree) {
         subtree_mutation(h_oldprogs[parent_index], h_nextprogs[pos], params,
                          h_gen);
-      } else if (h_nextprogs[pos].mut_type == mutation_t::hoist) {
+      } else if (mutation_types[pos] == mutation_t::hoist) {
         hoist_mutation(h_oldprogs[parent_index], h_nextprogs[pos], params,
                        h_gen);
-      } else if (h_nextprogs[pos].mut_type == mutation_t::point) {
+      } else if (mutation_types[pos] == mutation_t::point) {
         point_mutation(h_oldprogs[parent_index], h_nextprogs[pos], params,
-                       h_gen);
-      } else if (h_nextprogs[pos].mut_type == mutation_t::reproduce) {
+                        h_gen);
+      } else if (mutation_types[pos] == mutation_t::reproduce) {
         h_nextprogs[pos] = h_oldprogs[parent_index];
       } else {
         // Should not come here
@@ -400,7 +403,7 @@ void symFit(const float *input, const float *labels,
   std::vector<float> h_fitness(params.population_size, 0.0f);
 
   PhiloxEngine h_gen_engine(params.random_state);
-  ;
+  
   uniform_int_distribution_custom<int> seed_dist;
 
   /* Begin training */
@@ -456,6 +459,7 @@ void symFit(const float *input, const float *labels,
   }
 
   // Set final generation programs(deepcopy)
+  // FIXME: Just swap pointers. 
   std::copy(h_currprogs.begin(), h_currprogs.end(), final_progs);
 
   // Reset automatic growth parameter
