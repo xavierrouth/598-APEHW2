@@ -10,13 +10,13 @@ hotspot dataset: (perf dataset)
 perf dataset : (perf_record "./genetic_benchmark " + dataset)
  
 time dataset : build
-    taskset -c 0,1,2,3,4,5,6,7 ./genetic_benchmark {{dataset}}
+    ./genetic_benchmark {{dataset}}
 
 perf_record *args: build
     taskset -c 0,1,2,3,4,5,6,7 perf record -o output/perf.data -e cache-misses,cycles,page-faults -F 10000 --call-graph dwarf {{args}}
     
 build:
-    make -f OriginalMakefile all
+    make -f OriginalMakefile all -B
 
 clean: clean_src clean_generated
 

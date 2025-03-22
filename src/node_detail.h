@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <node.h>
+#include <directx_math.h>
 
 namespace genetic {
 namespace detail {
@@ -74,8 +75,16 @@ inline float evaluate_node(const node &n, const float *data, const uint64_t stri
       return atanhf(in[0]);
     case node::type::cbrt:
       return cbrtf(in[0]);
-    case node::type::cos:
+    case node::type::cos: {
+
+      float out;
+      float tmp;
+      XMScalarSinCosEst(&out, &tmp, in[0]);
+
+
       return cosf(in[0]);
+    }
+      
     case node::type::cosh:
       return coshf(in[0]);
     case node::type::cube:
@@ -93,7 +102,15 @@ inline float evaluate_node(const node &n, const float *data, const uint64_t stri
     case node::type::rsqrt:
       return static_cast<float>(1.0) / sqrtf(abs_inval);
     case node::type::sin:
+    {
+
+      float out;
+      float tmp;
+      XMScalarSinCosEst(&out, &tmp, in[0]);
+
+
       return sinf(in[0]);
+    }
     case node::type::sinh:
       return sinhf(in[0]);
     case node::type::sq:
